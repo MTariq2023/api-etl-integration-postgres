@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>API ETL Integration (Postgres)</title>
+  <style>
+    :root{
+      --blue:#007acc;
+      --blue-dark:#005f99;
+      --bg:#f4f6f9;
+      --card:#ffffff;
+      --shadow:0 2px 6px rgba(0,0,0,.1);
+    }
+    body{margin:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:#333}
+    header{background:var(--blue);color:#fff;text-align:center;padding:2rem 1rem}
+    h1,h2{color:var(--blue);margin-top:0}
+    .container{max-width:960px;margin:0 auto;padding:2rem 1.25rem}
+    .card{background:var(--card);box-shadow:var(--shadow);border-radius:10px;padding:1.25rem;margin-bottom:1.25rem}
+    .btns{margin:.75rem 0 1.25rem}
+    .btn{
+      display:inline-block;margin:.25rem .5rem .25rem 0;padding:10px 16px;
+      background:var(--blue);color:#fff;border-radius:6px;text-decoration:none;font-weight:600
+    }
+    .btn:hover{background:var(--blue-dark)}
+    .back{display:inline-block;margin-bottom:1rem;color:var(--blue);text-decoration:none;font-weight:600}
+    .back:hover{text-decoration:underline}
+    code, pre code{background:#f0f2f5}
+    code{padding:2px 6px;border-radius:4px}
+    pre{overflow:auto;background:#f0f2f5;border-radius:8px;padding:12px}
+    ul{margin-top:.25rem}
+    footer{text-align:center;background:#e0e0e0;padding:1rem}
+    footer a{color:var(--blue);text-decoration:none;font-weight:600}
+    footer a:hover{text-decoration:underline}
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>API ETL Integration (Postgres)</h1>
+    <p>REST + SOAP → Pandas transform → AWS RDS PostgreSQL (SQLAlchemy, SSL)</p>
+  </header>
+
+  <div class="container">
+
+    <a class="back" href="../index.html">← Back to Home</a>
+
+    <!-- Overview -->
+    <div class="card">
+      <h2>Overview</h2>
+      <p>
+        This ETL pulls <strong>weather</strong> data from the OpenWeather REST API (JSON) and
+        <strong>country metadata</strong> from the CountryInfo SOAP service (WSDL), transforms/join with
+        <strong>pandas</strong>, and loads into <strong>PostgreSQL</strong> (deployed on AWS RDS) via
+        <strong>SQLAlchemy</strong> with SSL. A view <code>vw_weather_country</code> provides a clean
+        reporting surface for dashboards and ad-hoc queries.
+      </p>
+      <div class="btns">
+        <a class="btn" href="https://github.com/MTariq2023/api-etl-integration-postgres" target="_blank" rel="noopener">GitHub Repo</a>
+        <a class="btn" href="https://github.com/MTariq2023/api-etl-integration-postgres/blob/main/schema.sql" target="_blank" rel="noopener">View SQL Schema</a>
+        <a class="btn" href="https://github.com/MTariq2023/api-etl-integration-postgres/tree/main/screenshots" target="_blank" rel="noopener">Screenshots</a>
+      </div>
+    </div>
+
+    <!-- Architecture -->
+    <div class="card">
+      <h2>Architecture</h2>
+      <ul>
+        <li><strong>Extract:</strong> OpenWeather (REST/JSON) + CountryInfo (SOAP/XML via WSDL using <code>zeep</code>).</li>
+        <li><strong>Transform:</strong> Normalize fields, select key attributes, map ISO-2 codes, join in pandas.</li>
+        <li><strong>Load:</strong> Upsert into <code>weather_data</code> and <code>country_info</code>; create view <code>vw_weather_country</code>.</li>
+        <li><strong>Verify:</strong> quick SQL checks and a “Top recent cities by temperature” query.</li>
+      </ul>
+    </div>
+
+    <!-- Tech -->
+    <div class="card">
+      <h2>Tech Stack</h2>
+      <ul>
+        <li>Python: <code>pandas</code>, <code>requests</code>, <code>zeep</code>, <code>SQLAlchemy</code>, <code>python-dotenv</code></li>
+        <li>Database: PostgreSQL (AWS RDS), SSL required</li>
+        <li>APIs: OpenWeather (REST), CountryInfo WSDL (SOAP)</li>
+      </ul>
+    </div>
+
+    <!-- Setup -->
+    <div class="card">
+      <h2>Run Locally</h2>
+
+      <h3>1) Environment variables</h3>
+      <p>Create a <code>.env</code> file in the project root:</p>
+<pre><code>OPENWEATHER_API_KEY=YOUR_KEY_HERE
+# Example (URL-encode special characters like ! as %21)
+DATABASE_URL=postgresql+psycopg2://postgres:Your%21Pass@your-rds-endpoint:5432/etl?sslmode=require
+</code></pre>
+
+      <h3>2) Install &amp; run</h3>
+<pre><code># from the project folder
+python -m venv venv
+venv\Scripts\activate    # (Windows)  |  source venv/bin/activate  # (macOS/Linux)
+pip install -r requirements.txt
+python etl_pipeline.py
+</code></pre>
+
+      <h3>3) Verify in Postgres</h3>
+<pre><code>-- Row counts
+SELECT 'weather_data' AS tbl, COUNT(*) AS rows FROM public.weather_data
+UNION ALL
+SELECT 'country_info' AS tbl, COUNT(*) AS rows FROM public.country_info;
+
+-- Preview joined view
+SELECT * 
+FROM public.vw_weather_country
+ORDER BY observed_at DESC
+LIMIT 20;
+</code></pre>
+    </div>
+
+    <!-- Schema Summary -->
+    <div class="card">
+      <h2>Schema Summary</h2>
+      <p>See full DDL in <a href="https://github.com/MTariq2023/api-etl-integration-postgres/blob/main/schema.sql" target="_blank" rel="noopener">schema.sql</a>. Key objects:</p>
+      <ul>
+        <li><code>weather_data</code> &mdash; city, country ISO-2, temperature/humidity, observed_at</li>
+        <li><code>country_info</code> &mdash; ISO-2, country_name, capital, currency, population</li>
+        <li><code>vw_weather_country</code> &mdash; reporting view joining the two</li>
+      </ul>
+<pre><code>-- example: top recent cities by temperature
+SELECT city, iso2, temperature_c, observed_at
+FROM public.vw_weather_country
+ORDER BY observed_at DESC, temperature_c DESC
+LIMIT 10;
+</code></pre>
+    </div>
+
+    <!-- Notes -->
+    <div class="card">
+      <h2>Notes &amp; Gotchas</h2>
+      <ul>
+        <li>RDS requires <code>sslmode=require</code> in the connection string.</li>
+        <li>If your DB password contains special characters (e.g., <code>!</code>), URL-encode them (<code>!</code> → <code>%21</code>).</li>
+        <li>Keep your API key and DB URL only in <code>.env</code> (never commit secrets).</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <footer>
+    &copy; 2025 Mohammed Tariq ·
+    <a href="mailto:mohammed1645tariq@gmail.com">Email Me</a> ·
+    <a href="https://github.com/MTariq2023" target="_blank" rel="noopener">GitHub</a>
+  </footer>
+
+</body>
+</html>
+
