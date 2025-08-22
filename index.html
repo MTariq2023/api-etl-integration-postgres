@@ -83,6 +83,12 @@
       background-color: #005f99;
     }
 
+    .small-link {
+      display: inline-block;
+      margin-left: 12px;
+      font-weight: normal;
+    }
+
     footer {
       text-align: center;
       padding: 1rem;
@@ -128,6 +134,14 @@
     <section class="projects">
       <h2>Projects</h2>
 
+      <!-- NEW: API ETL Integration (Postgres) -->
+      <div class="project">
+        <h3>🔗 API ETL Integration (Postgres)</h3>
+        <p>Python ETL that integrates <strong>REST/JSON (OpenWeather)</strong> and <strong>SOAP/XML (CountryInfo WSDL)</strong>, transforms with pandas, and loads into <strong>AWS RDS PostgreSQL</strong> using SQLAlchemy (SSL required). Includes a reporting view (<code>vw_weather_country</code>) and a gallery of setup/results screenshots.</p>
+        <a class="project-link" href="https://mtariq2023.github.io/api-etl-integration-postgres/" target="_blank">View Project Page →</a>
+        <a class="small-link" href="https://github.com/MTariq2023/api-etl-integration-postgres" target="_blank">GitHub Repo</a>
+      </div>
+
       <div class="project">
         <h3>📅 Appointment Booking System</h3>
         <p>A C# Windows Forms application integrated with PostgreSQL that allows users to book, view, and manage appointments. Features include conflict checking, input validation, and a live data grid.</p>
@@ -167,3 +181,5 @@
 
 </body>
 </html>
+
+
